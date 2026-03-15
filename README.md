@@ -14,7 +14,7 @@ A machine learning project that predicts item-level sales across Big Mart outlet
 
 **Deployment** - Model serialized with Joblib and deployed as an interactive Streamlit web app with a clean dark UI.
 
-🚀 **Live App:** [Click here](https://bigmartsalesforecasting-myknvqewmnfhbbqtvabqen.streamlit.app/)
+🚀 **Live App:** [Click here](https://bigmartsalesforecasting-ylr7vqjqjvyypnb7sm23ve.streamlit.app/)
 
 ---
 
