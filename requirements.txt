@@ -1,6 +1,8 @@
 streamlit
 numpy
-joblib
-xgboost
+pandas
 scikit-learn
+xgboost
+joblib
+matplotlib>=3.7.0
 shap>=0.45.0
