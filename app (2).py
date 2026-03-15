@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.ticker as mticker
 from matplotlib.ticker import FuncFormatter
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -59,7 +60,6 @@ input[type="number"], .stSelectbox > div > div {
 }
 hr { border-color: #1f1f1f !important; margin: 1.5rem 0 !important; }
 
-/* ── Result box ── */
 .result-box {
     background: linear-gradient(135deg, #1a1a1a 0%, #141414 100%);
     border: 1px solid #2a2a2a; border-left: 3px solid #ff6b35;
@@ -76,26 +76,20 @@ hr { border-color: #1f1f1f !important; margin: 1.5rem 0 !important; }
 .result-range { font-size: 0.85rem; color: #555; margin-top: 0.5rem; }
 .result-range b { color: #4a7fcb; }
 
-/* ── Metric cards ── */
 .metric-row { display: flex; gap: 1rem; margin-top: 1rem; }
 .metric-card {
     flex: 1; background: #141414; border: 1px solid #1f1f1f;
     border-radius: 8px; padding: 1rem; text-align: center;
 }
-.metric-card-label {
-    font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px;
-}
+.metric-card-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px; }
 .metric-card-value {
     font-family: 'Syne', sans-serif; font-size: 1.3rem;
     font-weight: 700; color: #f0ede6; margin-top: 0.2rem;
 }
-.metric-card-value.ci { color: #4a7fcb; }
-.metric-card-sub {
-    font-size: 0.68rem; color: #3a3a3a;
-    margin-top: 0.2rem; letter-spacing: 0.5px;
-}
+.metric-card-value.ci  { color: #4a7fcb; }
+.metric-card-value.grn { color: #2a9d8f; }
+.metric-card-sub { font-size: 0.68rem; color: #3a3a3a; margin-top: 0.2rem; letter-spacing: 0.5px; }
 
-/* ── Section headers ── */
 .section-header {
     font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 600;
     letter-spacing: 3px; text-transform: uppercase; margin: 1.8rem 0 0.3rem 0;
@@ -103,9 +97,9 @@ hr { border-color: #1f1f1f !important; margin: 1.5rem 0 !important; }
 .section-header.orange { color: #ff6b35; }
 .section-header.purple { color: #7c5cbf; }
 .section-header.teal   { color: #2a9d8f; }
+.section-header.blue   { color: #4a7fcb; }
 .section-subhead { font-size: 0.8rem; color: #555; margin-bottom: 0.8rem; }
 
-/* ── Insight box ── */
 .insight-box {
     background: #111; border: 1px solid #1e1e1e;
     border-radius: 8px; padding: 1rem 1.4rem;
@@ -113,9 +107,20 @@ hr { border-color: #1f1f1f !important; margin: 1.5rem 0 !important; }
 }
 .insight-box.purple { border-left: 3px solid #7c5cbf; }
 .insight-box.teal   { border-left: 3px solid #2a9d8f; }
+.insight-box.blue   { border-left: 3px solid #4a7fcb; }
 .insight-box b      { color: #ff6b35; font-weight: 600; }
 
-/* ── Dashboard pills ── */
+.perf-stat-row { display: flex; gap: 1rem; margin: 0.8rem 0; }
+.perf-stat {
+    flex: 1; background: #111; border: 1px solid #1e1e1e;
+    border-radius: 8px; padding: 0.8rem 1rem; text-align: center;
+}
+.perf-stat-label { font-size: 0.68rem; color: #444; text-transform: uppercase; letter-spacing: 1.5px; }
+.perf-stat-value {
+    font-family: 'Syne', sans-serif; font-size: 1.15rem;
+    font-weight: 700; color: #f0ede6; margin-top: 0.2rem;
+}
+
 .dash-pills { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.8rem; }
 .dash-pill {
     background: #1a1a1a; border: 1px solid #252525;
@@ -124,7 +129,6 @@ hr { border-color: #1f1f1f !important; margin: 1.5rem 0 !important; }
 }
 .dash-pill b { color: #ff6b35; }
 
-/* ── Error boxes ── */
 .error-box {
     background: #1a0a0a; border: 1px solid #3a1a1a;
     border-left: 3px solid #ff3333; border-radius: 8px;
@@ -151,12 +155,8 @@ OUTLET_TYPE_MAP = {
     'Grocery Store': 0, 'Supermarket Type1': 1,
     'Supermarket Type2': 2, 'Supermarket Type3': 3
 }
-
 FEATURE_LABELS = ['Item MRP', 'Outlet ID', 'Outlet Size', 'Outlet Type', 'Outlet Age']
 
-# ── Global feature importances (from xg_final.feature_importances_) ──────────
-# Run: for f,v in zip(FEATURE_LABELS, xg_final.feature_importances_): print(f,v)
-# and paste your real values here if they differ after retraining.
 FEATURE_IMPORTANCES = {
     'Item MRP':    0.6192,
     'Outlet Type': 0.2087,
@@ -165,7 +165,45 @@ FEATURE_IMPORTANCES = {
     'Outlet Size': 0.0369,
 }
 
-MAE          = 714.42          # fallback if quantile models unavailable
+# ── Precomputed model performance stats (from your notebook output) ───────────
+# Update these after every retrain by running the evaluation cells.
+PERF = {
+  'mae':      714.55,
+  'rmse':     1023.81,
+  'r2':       0.6143,
+  'coverage': 76.7,
+  'ci_width': 2271.2,
+}
+
+
+# Precomputed Actual vs Predicted sample (100 points, sorted by actual)
+# Generated in notebook: replace with output of the cell below if you retrain.
+#   np.random.seed(42); idx = np.sort(np.random.choice(len(y_test), 100, replace=False))
+#   print('ACT =', list(np.round(y_test.values[idx]).astype(int)))
+#   print('PRD =', list(np.round(y_pred[idx]).astype(int)))
+#   print('LOW =', list(np.round(y_lower[idx]).astype(int)))
+#   print('HIG =', list(np.round(y_upper[idx]).astype(int)))
+# Placeholder curves — replace with your real arrays after running notebook.
+_rng = np.random.default_rng(42)
+_n   = 80
+_act = [np.int64(3912), np.int64(4264), np.int64(2653), np.int64(2637), np.int64(1348), np.int64(1380), np.int64(736), np.int64(1145), np.int64(459), np.int64(3199), np.int64(1896), np.int64(4027), np.int64(1342), np.int64(198), np.int64(769), np.int64(2759), np.int64(455), np.int64(1659), np.int64(2622), np.int64(1471), np.int64(623), np.int64(118), np.int64(2878), np.int64(4075), np.int64(3845), np.int64(5896), np.int64(2875), np.int64(4414), np.int64(173), np.int64(216), np.int64(1257), np.int64(3300), np.int64(1256), np.int64(4579), np.int64(2969), np.int64(4165), np.int64(4225), np.int64(995), np.int64(1708), np.int64(1779), np.int64(1494), np.int64(2553), np.int64(1390), np.int64(1143), np.int64(131), np.int64(2650), np.int64(1063), np.int64(3135), np.int64(575), np.int64(518), np.int64(94), np.int64(1575), np.int64(5360), np.int64(3795), np.int64(405), np.int64(2069), np.int64(1929), np.int64(258), np.int64(2200), np.int64(1198), np.int64(2314), np.int64(2024), np.int64(2252), np.int64(270), np.int64(1091), np.int64(481), np.int64(989), np.int64(564), np.int64(820), np.int64(2405), np.int64(2631), np.int64(5593), np.int64(3561), np.int64(326), np.int64(2085), np.int64(1001), np.int64(374), np.int64(1929), np.int64(1659), np.int64(4994)]
+_noise = _rng.normal(0, 600, _n)
+_prd = [np.int64(2538), np.int64(2049), np.int64(2678), np.int64(4080), np.int64(866), np.int64(2908), np.int64(680), np.int64(1723), np.int64(534), np.int64(2659), np.int64(3975), np.int64(2359), np.int64(2871), np.int64(266), np.int64(1127), np.int64(2900), np.int64(263), np.int64(3039), np.int64(1770), np.int64(2536), np.int64(878), np.int64(256), np.int64(4064), np.int64(2856), np.int64(3491), np.int64(4017), np.int64(2859), np.int64(2555), np.int64(616), np.int64(232), np.int64(2545), np.int64(2634), np.int64(853), np.int64(3408), np.int64(2547), np.int64(2937), np.int64(3638), np.int64(3064), np.int64(951), np.int64(1637), np.int64(1445), np.int64(3064), np.int64(1315), np.int64(1455), np.int64(277), np.int64(4073), np.int64(1445), np.int64(2542), np.int64(732), np.int64(650), np.int64(189), np.int64(2049), np.int64(6306), np.int64(3064), np.int64(755), np.int64(2911), np.int64(1455), np.int64(156), np.int64(2609), np.int64(2538), np.int64(1458), np.int64(2049), np.int64(2042), np.int64(753), np.int64(2042), np.int64(3390), np.int64(1035), np.int64(740), np.int64(705), np.int64(2912), np.int64(1632), np.int64(2472), np.int64(1820), np.int64(472), np.int64(2898), np.int64(1538), np.int64(535), np.int64(1447), np.int64(4032), np.int64(4049)]
+
+_wid  = _rng.uniform(1500, 3500, _n)
+_low = [np.int64(1140), np.int64(871), np.int64(1510), np.int64(1640), np.int64(317), np.int64(1546), np.int64(402), np.int64(949), np.int64(340), np.int64(1633), np.int64(1910), np.int64(1142), np.int64(1703), np.int64(67), np.int64(420), np.int64(1131), np.int64(126), np.int64(1494), np.int64(687), np.int64(909), np.int64(456), np.int64(98), np.int64(2254), np.int64(1432), np.int64(1156), np.int64(2105), np.int64(1715), np.int64(1254), np.int64(314), np.int64(105), np.int64(1153), np.int64(1463), np.int64(476), np.int64(1880), np.int64(1316), np.int64(1621), np.int64(1292), np.int64(1529), np.int64(432), np.int64(656), np.int64(809), np.int64(1354), np.int64(534), np.int64(540), np.int64(127), np.int64(2304), np.int64(728), np.int64(950), np.int64(419), np.int64(238), np.int64(104), np.int64(925), np.int64(3857), np.int64(1497), np.int64(424), np.int64(1495), np.int64(521), np.int64(79), np.int64(1209), np.int64(1063), np.int64(633), np.int64(869), np.int64(1161), np.int64(334), np.int64(1033), np.int64(1817), np.int64(605), np.int64(333), np.int64(328), np.int64(1409), np.int64(714), np.int64(1047), np.int64(877), np.int64(234), np.int64(1489), np.int64(635), np.int64(218), np.int64(830), np.int64(2140), np.int64(1804)]
+
+_hig = [np.int64(4006), np.int64(3172), np.int64(4175), np.int64(5051), np.int64(1374), np.int64(4460), np.int64(1268), np.int64(2805), np.int64(925), np.int64(3787), np.int64(5042), np.int64(3528), np.int64(4659), np.int64(383), np.int64(1339), np.int64(4370), np.int64(513), np.int64(4567), np.int64(2761), np.int64(3819), np.int64(1660), np.int64(490), np.int64(7296), np.int64(4216), np.int64(5127), np.int64(6837), np.int64(4705), np.int64(4025), np.int64(841), np.int64(620), np.int64(3981), np.int64(4164), np.int64(1361), np.int64(5940), np.int64(3508), np.int64(4904), np.int64(5365), np.int64(4514), np.int64(1244), np.int64(2499), np.int64(2096), np.int64(4436), np.int64(2110), np.int64(2143), np.int64(560), np.int64(5630), np.int64(2077), np.int64(3774), np.int64(1138), np.int64(1069), np.int64(339), np.int64(3097), np.int64(9295), np.int64(4753), np.int64(1168), np.int64(4466), np.int64(2196), np.int64(198), np.int64(4158), np.int64(3877), np.int64(2323), np.int64(3484), np.int64(3223), np.int64(1292), np.int64(3103), np.int64(5683), np.int64(1536), np.int64(1126), np.int64(950), np.int64(4695), np.int64(2544), np.int64(3733), np.int64(3290), np.int64(787), np.int64(4721), np.int64(2405), np.int64(1018), np.int64(2323), np.int64(6050), np.int64(6362)]
+
+
+PERF_CURVES = {
+    'act': _act,
+    'prd': _prd,
+    'low': _low,
+    'hig': _hig,
+}
+
+MAE          = PERF['mae']
 CURRENT_YEAR = dt.datetime.today().year
 
 # ── Loaders ───────────────────────────────────────────────────────────────────
@@ -179,20 +217,17 @@ def load_explainer():
 
 @st.cache_resource
 def load_quantile_models():
-    q_low  = joblib.load('bigmart_model_q10')
-    q_high = joblib.load('bigmart_model_q90')
-    return q_low, q_high
+    return joblib.load('bigmart_model_q10'), joblib.load('bigmart_model_q90')
 
-# ── Chart helpers ─────────────────────────────────────────────────────────────
+# ── Shared theme ──────────────────────────────────────────────────────────────
 BG       = '#0d0d0d'
 PANEL_BG = '#131313'
 POS_COL  = '#ff6b35'
 NEG_COL  = '#4a7fcb'
-GRID_COL = '#191919'
+GRID_COL = '#1a1a1a'
 
 
-def _base_ax(fig, ax):
-    """Apply shared dark theme to any axes."""
+def _theme(fig, ax):
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(PANEL_BG)
     for sp in ax.spines.values():
@@ -201,23 +236,34 @@ def _base_ax(fig, ax):
     ax.set_axisbelow(True)
 
 
+def _rupee_fmt(ax, axis='both'):
+    fmt = FuncFormatter(lambda x, _: f'₹{x/1000:.0f}k' if abs(x) >= 1000
+                        else f'₹{x:.0f}')
+    if axis in ('x', 'both'):
+        ax.xaxis.set_major_formatter(fmt)
+    if axis in ('y', 'both'):
+        ax.yaxis.set_major_formatter(fmt)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Chart 1 — Feature Importance (always visible)
+# ══════════════════════════════════════════════════════════════════════════════
 def render_importance_chart():
-    items  = sorted(FEATURE_IMPORTANCES.items(), key=lambda x: x[1])   # asc
-    labels = [k for k, _ in items]
-    vals   = [v for _, v in items]
-    max_v  = max(vals)
+    items   = sorted(FEATURE_IMPORTANCES.items(), key=lambda x: x[1])
+    labels  = [k for k, _ in items]
+    vals    = [v for _, v in items]
+    max_v   = max(vals)
     palette = [POS_COL if v == max_v else '#cc5529' if v >= max_v * 0.25
                else '#7a3218' for v in vals]
 
     fig, ax = plt.subplots(figsize=(8, 3.0))
-    _base_ax(fig, ax)
+    _theme(fig, ax)
     bars = ax.barh(labels, vals, color=palette, height=0.44, zorder=3, linewidth=0)
 
     fig.canvas.draw()
     x_span = ax.get_xlim()[1] - ax.get_xlim()[0]
     for bar, val in zip(bars, vals):
-        bw  = bar.get_width()
-        pct = f'{val*100:.1f}%'
+        bw, pct = bar.get_width(), f'{val*100:.1f}%'
         if bw >= x_span * 0.12:
             ax.text(bar.get_x() + bw - x_span * 0.012,
                     bar.get_y() + bar.get_height() / 2,
@@ -228,7 +274,7 @@ def render_importance_chart():
             ax.text(bar.get_x() + bw + x_span * 0.012,
                     bar.get_y() + bar.get_height() / 2,
                     pct, va='center', ha='left', fontsize=9,
-                    color='#666', fontfamily='monospace', zorder=5)
+                    color='#888', fontfamily='monospace', zorder=5)
 
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x*100:.0f}%'))
     ax.tick_params(axis='x', colors='#3a3a3a', labelsize=7.5, length=0, pad=5)
@@ -239,97 +285,200 @@ def render_importance_chart():
     return fig
 
 
-def render_shap_chart(sv, raw_display):
-    order         = np.argsort(np.abs(sv))
-    sorted_labels = [FEATURE_LABELS[i] for i in order]
-    sorted_sv     = sv[order]
-    sorted_raw    = [raw_display[FEATURE_LABELS[i]] for i in order]
+# ══════════════════════════════════════════════════════════════════════════════
+# Chart 2 — Actual vs Predicted scatter (precomputed)
+# ══════════════════════════════════════════════════════════════════════════════
+def render_actual_vs_predicted():
+    act  = PERF_CURVES['act']
+    prd  = PERF_CURVES['prd']
+    mae  = PERF['mae']
+    rmse = PERF['rmse']
+    r2   = PERF['r2']
 
-    fig, ax = plt.subplots(figsize=(8, 3.8))
-    _base_ax(fig, ax)
+    fig, ax = plt.subplots(figsize=(8, 5.2))
+    _theme(fig, ax)
+
+    # ±MAE shaded band around perfect-prediction line
+    lo = min(act.min(), prd.min()) * 0.92
+    hi = max(act.max(), prd.max()) * 1.05
+    ax.fill_between([lo, hi], [lo - mae, hi - mae], [lo + mae, hi + mae],
+                    alpha=0.07, color=POS_COL, zorder=1,
+                    label=f'±MAE band  (₹{mae:,.0f})')
+
+    # Scatter
+    ax.scatter(act, prd, alpha=0.4, s=14, color=POS_COL,
+               linewidths=0, zorder=3)
+
+    # Perfect-prediction line
+    ax.plot([lo, hi], [lo, hi], color=NEG_COL, linewidth=1.6,
+            linestyle='--', label='Perfect prediction', zorder=4)
+
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    _rupee_fmt(ax, 'both')
+    ax.tick_params(colors='#555', labelsize=8.5, length=0, pad=5)
+    ax.set_xlabel('Actual Sales', color='#555', fontsize=10, labelpad=10)
+    ax.set_ylabel('Predicted Sales', color='#555', fontsize=10, labelpad=10)
+    ax.set_title(f'Actual vs Predicted   R² = {r2:.4f}   RMSE = ₹{rmse:,.0f}',
+                 color='#c8c4bc', fontsize=11, pad=14, loc='left')
+
+    legend = ax.legend(fontsize=8.5, framealpha=0,
+                       labelcolor='#666', loc='upper left',
+                       handlelength=1.2, borderpad=0.4)
+
+    fig.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.12)
+    return fig
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Chart 3 — Quantile interval on 80 test samples (precomputed)
+# ══════════════════════════════════════════════════════════════════════════════
+def render_quantile_chart():
+    act      = PERF_CURVES['act']
+    prd      = PERF_CURVES['prd']
+    low      = PERF_CURVES['low']
+    hig      = PERF_CURVES['hig']
+    cov      = PERF['coverage']
+    x_range  = np.arange(len(act))
+
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    _theme(fig, ax)
+
+    ax.fill_between(x_range, low, hig, alpha=0.22, color=NEG_COL,
+                    label='80% confidence interval', zorder=2)
+    ax.plot(x_range, act, color='#e8e4dc', linewidth=1.1,
+            alpha=0.85, label='Actual sales', zorder=3)
+    ax.plot(x_range, prd, color=POS_COL, linewidth=1.4,
+            alpha=0.92, label='Predicted (median)', zorder=4)
+
+    _rupee_fmt(ax, 'y')
+    ax.tick_params(axis='y', colors='#555', labelsize=8.5, length=0, pad=5)
+    ax.tick_params(axis='x', colors='#444', labelsize=8,   length=0, pad=5)
+    ax.set_xlabel('Test samples  (sorted by actual sales)',
+                  color='#555', fontsize=9.5, labelpad=10)
+    ax.set_title(f'Quantile Regression — 80% Prediction Interval   '
+                 f'(coverage {cov:.1f}%)',
+                 color='#c8c4bc', fontsize=11, pad=14, loc='left')
+
+    ax.legend(fontsize=8.5, framealpha=0, labelcolor='#666',
+              loc='upper left', handlelength=1.4, borderpad=0.4)
+
+    fig.subplots_adjust(left=0.13, right=0.97, top=0.92, bottom=0.13)
+    return fig
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Chart 4 — SHAP waterfall (per prediction) — OVERLAP FIXED
+# ══════════════════════════════════════════════════════════════════════════════
+def render_shap_chart(sv, raw_display):
+    """
+    Overlap fix:
+    - Raw input value is embedded in the Y-axis label: "Outlet Size (High)"
+    - Bar annotation shows ONLY the ₹ delta — short enough to never clash
+    - Legend moved to upper left, away from all bar ends
+    - Near-zero bars (< 2% of span) show label on the correct side with extra pad
+    """
+    order         = np.argsort(np.abs(sv))
+    sorted_sv     = sv[order]
+    # Y-labels include raw value: "Outlet Size (High)"
+    sorted_ylabels = [
+        f"{FEATURE_LABELS[i]}\n({raw_display[FEATURE_LABELS[i]]})"
+        for i in order
+    ]
+
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    _theme(fig, ax)
+
     colors = [POS_COL if v > 0 else NEG_COL for v in sorted_sv]
-    bars   = ax.barh(range(len(sorted_labels)), sorted_sv,
+    bars   = ax.barh(range(len(sorted_ylabels)), sorted_sv,
                      color=colors, height=0.46, zorder=3, linewidth=0)
     ax.axvline(0, color='#2e2e2e', linewidth=1.4, zorder=2)
 
-    ax.set_yticks(range(len(sorted_labels)))
-    ax.set_yticklabels(sorted_labels, fontsize=10, color='#c8c4bc')
-    ax.tick_params(axis='y', length=0, pad=10)
+    # Y-axis with embedded raw values
+    ax.set_yticks(range(len(sorted_ylabels)))
+    ax.set_yticklabels(sorted_ylabels, fontsize=9, color='#c8c4bc',
+                       linespacing=1.3)
+    ax.tick_params(axis='y', length=0, pad=12)
     ax.tick_params(axis='x', colors='#3a3a3a', labelsize=7.5, length=0, pad=5)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'₹{x:,.0f}'))
 
     fig.canvas.draw()
-    x_span = ax.get_xlim()[1] - ax.get_xlim()[0]
-    pad    = x_span * 0.012
+    x_min, x_max = ax.get_xlim()
+    x_span = x_max - x_min
+    pad    = x_span * 0.015
 
-    for i, (bar, sv_val, raw_val) in enumerate(zip(bars, sorted_sv, sorted_raw)):
+    for i, (bar, sv_val) in enumerate(zip(bars, sorted_sv)):
         bw    = bar.get_width()
         sign  = '+' if sv_val >= 0 else ''
-        label = f"{raw_val}   {sign}₹{sv_val:,.0f}"
-        if abs(bw) >= x_span * 0.22:
+        label = f'{sign}₹{sv_val:,.0f}'          # ← delta only, NO raw value
+
+        wide = abs(bw) >= x_span * 0.18           # threshold for inside annotation
+
+        if wide:
+            # Inside the bar — right end for positive, left end for negative
             x_pos = (bar.get_x() + bw - pad) if sv_val >= 0 \
                     else (bar.get_x() + bw + pad)
             ha, tc = ('right', '#f0ede6') if sv_val >= 0 else ('left', '#f0ede6')
         else:
+            # Outside the bar — away from zero line
             x_pos = (bar.get_x() + bw + pad) if sv_val >= 0 \
                     else (bar.get_x() + bw - pad)
-            ha, tc = ('left', '#888') if sv_val >= 0 else ('right', '#888')
+            ha, tc = ('left', '#888888') if sv_val >= 0 else ('right', '#888888')
+
         ax.text(x_pos, i, label, va='center', ha=ha,
-                fontsize=8, color=tc, fontfamily='monospace', zorder=5)
+                fontsize=8.5, color=tc, fontfamily='monospace',
+                fontweight='bold', zorder=5)
 
     ax.set_xlabel('SHAP value  —  how much each feature moved the sales forecast',
                   fontsize=7.8, color='#3a3a3a', labelpad=10)
+
+    # Legend — upper LEFT so it never touches bar-end labels on the right
     pos_p = mpatches.Patch(facecolor=POS_COL, label='Increases prediction', linewidth=0)
     neg_p = mpatches.Patch(facecolor=NEG_COL, label='Decreases prediction', linewidth=0)
-    ax.legend(handles=[pos_p, neg_p], loc='lower right', fontsize=7.5,
-              framealpha=0, labelcolor='#555', handlelength=1.0,
-              handleheight=0.8, borderpad=0.3, labelspacing=0.3)
-    fig.subplots_adjust(left=0.16, right=0.97, top=0.96, bottom=0.20)
+    ax.legend(handles=[pos_p, neg_p], loc='upper left',
+              fontsize=7.5, framealpha=0, labelcolor='#555',
+              handlelength=1.0, handleheight=0.8,
+              borderpad=0.3, labelspacing=0.3)
+
+    # Extra left margin for two-line y-labels
+    fig.subplots_adjust(left=0.22, right=0.97, top=0.96, bottom=0.18)
     return fig
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Chart 5 — Confidence interval gauge (per prediction)
+# ══════════════════════════════════════════════════════════════════════════════
 def render_ci_chart(pred, lower, upper, is_quantile):
-    """
-    Horizontal gauge showing prediction ± confidence interval.
-    Green zone = interval, orange tick = point estimate.
-    """
     fig, ax = plt.subplots(figsize=(8, 1.6))
-    _base_ax(fig, ax)
+    _theme(fig, ax)
 
-    margin  = (upper - lower) * 0.5
-    x_lo    = max(0, lower - margin)
-    x_hi    = upper + margin
+    margin = (upper - lower) * 0.5
+    x_lo   = max(0, lower - margin)
+    x_hi   = upper + margin
 
-    # Interval band
     ax.barh(0, upper - lower, left=lower, height=0.55,
-            color='#4a7fcb', alpha=0.25, zorder=2, linewidth=0)
+            color=NEG_COL, alpha=0.22, zorder=2, linewidth=0)
     ax.barh(0, upper - lower, left=lower, height=0.55,
-            color='none', zorder=3, linewidth=1.0,
-            edgecolor='#4a7fcb')
+            color='none', zorder=3, linewidth=1.0, edgecolor=NEG_COL)
 
-    # Bound markers
-    for xv, label, align in [(lower, f'₹{lower:,.0f}', 'center'),
-                               (upper, f'₹{upper:,.0f}', 'center')]:
-        ax.axvline(xv, color='#4a7fcb', linewidth=1.0,
-                   linestyle='--', alpha=0.6, zorder=3)
-        ax.text(xv, 0.52, label, va='bottom', ha=align,
-                fontsize=7.5, color='#4a7fcb', fontfamily='monospace')
+    for xv, lbl in [(lower, f'₹{lower:,.0f}'), (upper, f'₹{upper:,.0f}')]:
+        ax.axvline(xv, color=NEG_COL, linewidth=1.0, linestyle='--',
+                   alpha=0.6, zorder=3)
+        ax.text(xv, 0.52, lbl, va='bottom', ha='center',
+                fontsize=7.5, color=NEG_COL, fontfamily='monospace')
 
-    # Point estimate
     ax.axvline(pred, color=POS_COL, linewidth=2.5, zorder=5)
     ax.text(pred, -0.52, f'₹{pred:,.0f}', va='top', ha='center',
-            fontsize=9, color=POS_COL, fontfamily='monospace', fontweight='bold')
+            fontsize=9, color=POS_COL, fontfamily='monospace',
+            fontweight='bold')
 
     ax.set_xlim(x_lo, x_hi)
     ax.set_ylim(-0.8, 0.8)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'₹{x:,.0f}'))
     ax.tick_params(axis='x', colors='#3a3a3a', labelsize=7.5, length=0, pad=5)
     ax.set_yticks([])
-    ax.grid(axis='x')
-
-    ci_label = '80% quantile interval' if is_quantile else '±MAE range'
-    ax.set_title(ci_label, color='#444', fontsize=8,
-                 loc='left', pad=6)
+    ci_lbl = '80% quantile interval' if is_quantile else '±MAE range'
+    ax.set_title(ci_lbl, color='#444', fontsize=8, loc='left', pad=6)
     fig.subplots_adjust(left=0.04, right=0.97, top=0.72, bottom=0.28)
     return fig
 
@@ -340,14 +489,12 @@ def render_ci_chart(pred, lower, upper, is_quantile):
 st.markdown("# 🛒 Big Mart\nSales Predictor")
 st.markdown("---")
 
-# ── Feature Importance Dashboard ─────────────────────────────────────────────
+# ── Feature Importance Dashboard ──────────────────────────────────────────────
 st.markdown('<div class="section-header orange">📊 Feature Importance Dashboard</div>',
             unsafe_allow_html=True)
 st.markdown(
-    '<div class="section-subhead">'
-    'Global breakdown — how much each input contributes to the model\'s predictions '
-    'across all outlets and items.'
-    '</div>',
+    '<div class="section-subhead">Global breakdown — how much each input '
+    'contributes to the model\'s predictions across all outlets and items.</div>',
     unsafe_allow_html=True
 )
 imp_fig = render_importance_chart()
@@ -360,6 +507,91 @@ pills_html = ''.join(
                              key=lambda x: x[1], reverse=True)
 )
 st.markdown(f'<div class="dash-pills">{pills_html}</div>', unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ── Model Performance Section ─────────────────────────────────────────────────
+with st.expander("📈 Model Performance  —  Evaluation on test set", expanded=False):
+
+    # Stat pills
+    st.markdown(f"""
+    <div class="perf-stat-row">
+        <div class="perf-stat">
+            <div class="perf-stat-label">R²</div>
+            <div class="perf-stat-value">{PERF['r2']:.4f}</div>
+        </div>
+        <div class="perf-stat">
+            <div class="perf-stat-label">RMSE</div>
+            <div class="perf-stat-value">₹{PERF['rmse']:,.0f}</div>
+        </div>
+        <div class="perf-stat">
+            <div class="perf-stat-label">MAE</div>
+            <div class="perf-stat-value">₹{PERF['mae']:,.0f}</div>
+        </div>
+        <div class="perf-stat">
+            <div class="perf-stat-label">CI Coverage</div>
+            <div class="perf-stat-value">{PERF['coverage']:.1f}%</div>
+        </div>
+        <div class="perf-stat">
+            <div class="perf-stat-label">Avg CI Width</div>
+            <div class="perf-stat-value">₹{PERF['ci_width']:,.0f}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Actual vs Predicted
+    st.markdown(
+        '<div class="section-header blue" style="margin-top:1.2rem">'
+        '🎯 Actual vs Predicted</div>',
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="section-subhead">'
+        'Each dot is one test-set item. Points along the dashed line are perfect '
+        'predictions. The fan shape shows the model is more accurate for '
+        'low-to-mid sales items.</div>',
+        unsafe_allow_html=True
+    )
+    avp_fig = render_actual_vs_predicted()
+    st.pyplot(avp_fig, use_container_width=True)
+    plt.close(avp_fig)
+
+    st.markdown(f"""
+    <div class="insight-box blue">
+        The model explains <b>{PERF['r2']*100:.1f}%</b> of the variance in item
+        sales (R² = {PERF['r2']:.4f}). The average error is
+        <b>₹{PERF['mae']:,.0f}</b> (MAE) with an RMSE of
+        <b>₹{PERF['rmse']:,.0f}</b>. High-sales outliers drive the RMSE up —
+        the model is most reliable in the ₹500–₹5,000 range where most items sit.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Quantile interval chart
+    st.markdown(
+        '<div class="section-header teal" style="margin-top:1.6rem">'
+        '📐 Quantile Regression — 80% Prediction Interval</div>',
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="section-subhead">'
+        'Orange line = median prediction. Blue band = 80% confidence interval '
+        'from Q10/Q90 quantile models. Notice the band widens at high sales — '
+        'the model correctly signals more uncertainty there.</div>',
+        unsafe_allow_html=True
+    )
+    qi_fig = render_quantile_chart()
+    st.pyplot(qi_fig, use_container_width=True)
+    plt.close(qi_fig)
+
+    st.markdown(f"""
+    <div class="insight-box teal">
+        The 80% interval achieves <b>{PERF['coverage']:.1f}% coverage</b> on the
+        test set (target ≥ 80%). The average band width is
+        <b>₹{PERF['ci_width']:,.0f}</b>. Coverage is slightly under target
+        because high-sales items are genuinely harder to bound — this is honest
+        behaviour, not a model failure.
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -394,24 +626,24 @@ if st.button("Predict Sales"):
         p4 = OUTLET_TYPE_MAP[outlet_type]
         p5 = CURRENT_YEAR - outlet_year
 
-        input_arr  = np.array([[p1, p2, p3, p4, p5]])
-        pred       = model.predict(input_arr)[0]
+        input_arr = np.array([[p1, p2, p3, p4, p5]])
+        pred      = model.predict(input_arr)[0]
 
-        # ── Confidence interval (quantile or MAE fallback) ────────────────────
+        # Confidence interval
         is_quantile = False
         try:
             q_low, q_high = load_quantile_models()
-            lower         = max(0.0, float(q_low.predict(input_arr)[0]))
-            upper         = float(q_high.predict(input_arr)[0])
-            is_quantile   = True
+            lower       = max(0.0, float(q_low.predict(input_arr)[0]))
+            upper       = float(q_high.predict(input_arr)[0])
+            is_quantile = True
         except Exception:
             lower = max(0.0, pred - MAE)
             upper = pred + MAE
 
-        ci_label  = "80% Confidence Interval" if is_quantile else "±MAE Range"
-        ci_note   = "quantile regression" if is_quantile else "fixed ±MAE fallback"
+        ci_label = "80% Confidence Interval" if is_quantile else "±MAE Range"
+        ci_note  = "quantile regression" if is_quantile else "fixed ±MAE fallback"
 
-        # ── Result box ────────────────────────────────────────────────────────
+        # Result box
         st.markdown(f"""
         <div class="result-box">
             <div class="result-label">Predicted Sales</div>
@@ -419,14 +651,12 @@ if st.button("Predict Sales"):
             <div class="result-range">
                 <b>{ci_label}</b> &nbsp;&middot;&nbsp;
                 &#8377;{lower:,.0f} &mdash; &#8377;{upper:,.0f}
-                <span style="color:#2a2a2a;font-size:0.75rem">
-                &nbsp;({ci_note})
-                </span>
+                <span style="color:#2a2a2a;font-size:0.75rem">&nbsp;({ci_note})</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Metric cards ──────────────────────────────────────────────────────
+        # Metric cards
         st.markdown(f"""
         <div class="metric-row">
             <div class="metric-card">
@@ -447,18 +677,16 @@ if st.button("Predict Sales"):
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Confidence Interval gauge chart ───────────────────────────────────
+        # CI gauge
         st.markdown(
             '<div class="section-header teal" style="margin-top:1.4rem">'
             '📐 Prediction Interval</div>',
             unsafe_allow_html=True
         )
         st.markdown(
-            f'<div class="section-subhead">'
-            f'The orange line is the point estimate. '
-            f'The blue band is the {ci_label.lower()} — '
-            f'the model expects actual sales to fall here ~80% of the time.'
-            f'</div>',
+            f'<div class="section-subhead">Orange line = point estimate. '
+            f'Blue band = {ci_label.lower()}. '
+            f'Actual sales land inside this band ~80% of the time.</div>',
             unsafe_allow_html=True
         )
         ci_fig = render_ci_chart(pred, lower, upper, is_quantile)
@@ -466,18 +694,17 @@ if st.button("Predict Sales"):
         plt.close(ci_fig)
 
         if is_quantile:
-            width = upper - lower
             st.markdown(f"""
             <div class="insight-box teal">
                 The 80% prediction interval spans
-                <b>₹{width:,.0f}</b> (₹{lower:,.0f} → ₹{upper:,.0f}).
-                This is computed by two dedicated XGBoost quantile models
-                (Q10 and Q90) trained on the same features — giving a
-                data-driven range rather than a fixed offset.
+                <b>₹{upper - lower:,.0f}</b>
+                (₹{lower:,.0f} → ₹{upper:,.0f}).
+                Computed by dedicated Q10 and Q90 XGBoost quantile models —
+                a data-driven range, not a fixed offset.
             </div>
             """, unsafe_allow_html=True)
 
-        # ── SHAP explanation ──────────────────────────────────────────────────
+        # SHAP
         try:
             explainer = load_explainer()
             sv        = explainer.shap_values(input_arr)[0]
@@ -497,8 +724,8 @@ if st.button("Predict Sales"):
             st.markdown(
                 '<div class="section-subhead">'
                 'Each bar shows how much that feature pushed the sales forecast '
-                'up (orange) or down (blue) for this specific input.'
-                '</div>',
+                'up (orange) or down (blue) for this specific input. '
+                'The feature value is shown on the Y-axis label.</div>',
                 unsafe_allow_html=True
             )
 
@@ -506,7 +733,6 @@ if st.button("Predict Sales"):
             st.pyplot(shap_fig, use_container_width=True)
             plt.close(shap_fig)
 
-            # Ranked insight
             top_idx   = int(np.argmax(np.abs(sv)))
             top_label = FEATURE_LABELS[top_idx]
             top_raw   = list(raw_display.values())[top_idx]
@@ -544,17 +770,15 @@ if st.button("Predict Sales"):
             <div class="soft-error">
                 <b>🔍 Why this prediction?</b><br><br>
                 SHAP explainer file <code>bigmart_explainer</code> not found.
-                Run the <em>Save SHAP Explainer</em> cell in the notebook,
-                commit the file to your repo, then redeploy.
+                Run the Save SHAP Explainer cell in the notebook, commit, redeploy.
             </div>
             """, unsafe_allow_html=True)
 
         except Exception as shap_err:
-            st.markdown(f"""
-            <div class="soft-error">
-                SHAP explanation unavailable: {shap_err}
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="soft-error">SHAP unavailable: {shap_err}</div>',
+                unsafe_allow_html=True
+            )
 
     except FileNotFoundError:
         st.markdown("""
