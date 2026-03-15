@@ -165,36 +165,41 @@ FEATURE_IMPORTANCES = {
     'Outlet Size': 0.0369,
 }
 
-# ── Precomputed model performance stats (from your notebook output) ───────────
-# Update these after every retrain by running the evaluation cells.
+# ── Precomputed model performance stats (real values from notebook) ───────────
 PERF = {
-  'mae':      714.55,
-  'rmse':     1023.81,
-  'r2':       0.6143,
-  'coverage': 76.7,
-  'ci_width': 2271.2,
+    'mae':      714.55,
+    'rmse':     1023.81,
+    'r2':       0.6143,
+    'coverage': 76.7,
+    'ci_width': 2271.2,
 }
 
-
-# Precomputed Actual vs Predicted sample (100 points, sorted by actual)
-# Generated in notebook: replace with output of the cell below if you retrain.
-#   np.random.seed(42); idx = np.sort(np.random.choice(len(y_test), 100, replace=False))
-#   print('ACT =', list(np.round(y_test.values[idx]).astype(int)))
-#   print('PRD =', list(np.round(y_pred[idx]).astype(int)))
-#   print('LOW =', list(np.round(y_lower[idx]).astype(int)))
-#   print('HIG =', list(np.round(y_upper[idx]).astype(int)))
-# Placeholder curves — replace with your real arrays after running notebook.
-_rng = np.random.default_rng(42)
-_n   = 80
-_act = [np.int64(3912), np.int64(4264), np.int64(2653), np.int64(2637), np.int64(1348), np.int64(1380), np.int64(736), np.int64(1145), np.int64(459), np.int64(3199), np.int64(1896), np.int64(4027), np.int64(1342), np.int64(198), np.int64(769), np.int64(2759), np.int64(455), np.int64(1659), np.int64(2622), np.int64(1471), np.int64(623), np.int64(118), np.int64(2878), np.int64(4075), np.int64(3845), np.int64(5896), np.int64(2875), np.int64(4414), np.int64(173), np.int64(216), np.int64(1257), np.int64(3300), np.int64(1256), np.int64(4579), np.int64(2969), np.int64(4165), np.int64(4225), np.int64(995), np.int64(1708), np.int64(1779), np.int64(1494), np.int64(2553), np.int64(1390), np.int64(1143), np.int64(131), np.int64(2650), np.int64(1063), np.int64(3135), np.int64(575), np.int64(518), np.int64(94), np.int64(1575), np.int64(5360), np.int64(3795), np.int64(405), np.int64(2069), np.int64(1929), np.int64(258), np.int64(2200), np.int64(1198), np.int64(2314), np.int64(2024), np.int64(2252), np.int64(270), np.int64(1091), np.int64(481), np.int64(989), np.int64(564), np.int64(820), np.int64(2405), np.int64(2631), np.int64(5593), np.int64(3561), np.int64(326), np.int64(2085), np.int64(1001), np.int64(374), np.int64(1929), np.int64(1659), np.int64(4994)]
-_noise = _rng.normal(0, 600, _n)
-_prd = [np.int64(2538), np.int64(2049), np.int64(2678), np.int64(4080), np.int64(866), np.int64(2908), np.int64(680), np.int64(1723), np.int64(534), np.int64(2659), np.int64(3975), np.int64(2359), np.int64(2871), np.int64(266), np.int64(1127), np.int64(2900), np.int64(263), np.int64(3039), np.int64(1770), np.int64(2536), np.int64(878), np.int64(256), np.int64(4064), np.int64(2856), np.int64(3491), np.int64(4017), np.int64(2859), np.int64(2555), np.int64(616), np.int64(232), np.int64(2545), np.int64(2634), np.int64(853), np.int64(3408), np.int64(2547), np.int64(2937), np.int64(3638), np.int64(3064), np.int64(951), np.int64(1637), np.int64(1445), np.int64(3064), np.int64(1315), np.int64(1455), np.int64(277), np.int64(4073), np.int64(1445), np.int64(2542), np.int64(732), np.int64(650), np.int64(189), np.int64(2049), np.int64(6306), np.int64(3064), np.int64(755), np.int64(2911), np.int64(1455), np.int64(156), np.int64(2609), np.int64(2538), np.int64(1458), np.int64(2049), np.int64(2042), np.int64(753), np.int64(2042), np.int64(3390), np.int64(1035), np.int64(740), np.int64(705), np.int64(2912), np.int64(1632), np.int64(2472), np.int64(1820), np.int64(472), np.int64(2898), np.int64(1538), np.int64(535), np.int64(1447), np.int64(4032), np.int64(4049)]
-
-_wid  = _rng.uniform(1500, 3500, _n)
-_low = [np.int64(1140), np.int64(871), np.int64(1510), np.int64(1640), np.int64(317), np.int64(1546), np.int64(402), np.int64(949), np.int64(340), np.int64(1633), np.int64(1910), np.int64(1142), np.int64(1703), np.int64(67), np.int64(420), np.int64(1131), np.int64(126), np.int64(1494), np.int64(687), np.int64(909), np.int64(456), np.int64(98), np.int64(2254), np.int64(1432), np.int64(1156), np.int64(2105), np.int64(1715), np.int64(1254), np.int64(314), np.int64(105), np.int64(1153), np.int64(1463), np.int64(476), np.int64(1880), np.int64(1316), np.int64(1621), np.int64(1292), np.int64(1529), np.int64(432), np.int64(656), np.int64(809), np.int64(1354), np.int64(534), np.int64(540), np.int64(127), np.int64(2304), np.int64(728), np.int64(950), np.int64(419), np.int64(238), np.int64(104), np.int64(925), np.int64(3857), np.int64(1497), np.int64(424), np.int64(1495), np.int64(521), np.int64(79), np.int64(1209), np.int64(1063), np.int64(633), np.int64(869), np.int64(1161), np.int64(334), np.int64(1033), np.int64(1817), np.int64(605), np.int64(333), np.int64(328), np.int64(1409), np.int64(714), np.int64(1047), np.int64(877), np.int64(234), np.int64(1489), np.int64(635), np.int64(218), np.int64(830), np.int64(2140), np.int64(1804)]
-
-_hig = [np.int64(4006), np.int64(3172), np.int64(4175), np.int64(5051), np.int64(1374), np.int64(4460), np.int64(1268), np.int64(2805), np.int64(925), np.int64(3787), np.int64(5042), np.int64(3528), np.int64(4659), np.int64(383), np.int64(1339), np.int64(4370), np.int64(513), np.int64(4567), np.int64(2761), np.int64(3819), np.int64(1660), np.int64(490), np.int64(7296), np.int64(4216), np.int64(5127), np.int64(6837), np.int64(4705), np.int64(4025), np.int64(841), np.int64(620), np.int64(3981), np.int64(4164), np.int64(1361), np.int64(5940), np.int64(3508), np.int64(4904), np.int64(5365), np.int64(4514), np.int64(1244), np.int64(2499), np.int64(2096), np.int64(4436), np.int64(2110), np.int64(2143), np.int64(560), np.int64(5630), np.int64(2077), np.int64(3774), np.int64(1138), np.int64(1069), np.int64(339), np.int64(3097), np.int64(9295), np.int64(4753), np.int64(1168), np.int64(4466), np.int64(2196), np.int64(198), np.int64(4158), np.int64(3877), np.int64(2323), np.int64(3484), np.int64(3223), np.int64(1292), np.int64(3103), np.int64(5683), np.int64(1536), np.int64(1126), np.int64(950), np.int64(4695), np.int64(2544), np.int64(3733), np.int64(3290), np.int64(787), np.int64(4721), np.int64(2405), np.int64(1018), np.int64(2323), np.int64(6050), np.int64(6362)]
-
+# ── Precomputed test-set curves (80 samples, from notebook evaluation) ────────
+# np.int64 scalars are cast to plain float via np.asarray in each chart function
+_act = [3912,4264,2653,2637,1348,1380,736,1145,459,3199,1896,4027,1342,198,
+        769,2759,455,1659,2622,1471,623,118,2878,4075,3845,5896,2875,4414,
+        173,216,1257,3300,1256,4579,2969,4165,4225,995,1708,1779,1494,2553,
+        1390,1143,131,2650,1063,3135,575,518,94,1575,5360,3795,405,2069,
+        1929,258,2200,1198,2314,2024,2252,270,1091,481,989,564,820,2405,
+        2631,5593,3561,326,2085,1001,374,1929,1659,4994]
+_prd = [2538,2049,2678,4080,866,2908,680,1723,534,2659,3975,2359,2871,266,
+        1127,2900,263,3039,1770,2536,878,256,4064,2856,3491,4017,2859,2555,
+        616,232,2545,2634,853,3408,2547,2937,3638,3064,951,1637,1445,3064,
+        1315,1455,277,4073,1445,2542,732,650,189,2049,6306,3064,755,2911,
+        1455,156,2609,2538,1458,2049,2042,753,2042,3390,1035,740,705,2912,
+        1632,2472,1820,472,2898,1538,535,1447,4032,4049]
+_low = [1140,871,1510,1640,317,1546,402,949,340,1633,1910,1142,1703,67,
+        420,1131,126,1494,687,909,456,98,2254,1432,1156,2105,1715,1254,
+        314,105,1153,1463,476,1880,1316,1621,1292,1529,432,656,809,1354,
+        534,540,127,2304,728,950,419,238,104,925,3857,1497,424,1495,
+        521,79,1209,1063,633,869,1161,334,1033,1817,605,333,328,1409,
+        714,1047,877,234,1489,635,218,830,2140,1804]
+_hig = [4006,3172,4175,5051,1374,4460,1268,2805,925,3787,5042,3528,4659,383,
+        1339,4370,513,4567,2761,3819,1660,490,7296,4216,5127,6837,4705,4025,
+        841,620,3981,4164,1361,5940,3508,4904,5365,4514,1244,2499,2096,4436,
+        2110,2143,560,5630,2077,3774,1138,1069,339,3097,9295,4753,1168,4466,
+        2196,198,4158,3877,2323,3484,3223,1292,3103,5683,1536,1126,950,4695,
+        2544,3733,3290,787,4721,2405,1018,2323,6050,6362]
 
 PERF_CURVES = {
     'act': _act,
@@ -289,8 +294,8 @@ def render_importance_chart():
 # Chart 2 — Actual vs Predicted scatter (precomputed)
 # ══════════════════════════════════════════════════════════════════════════════
 def render_actual_vs_predicted():
-    act  = PERF_CURVES['act']
-    prd  = PERF_CURVES['prd']
+    act  = np.asarray(PERF_CURVES['act'], dtype=float)
+    prd  = np.asarray(PERF_CURVES['prd'], dtype=float)
     mae  = PERF['mae']
     rmse = PERF['rmse']
     r2   = PERF['r2']
@@ -334,10 +339,10 @@ def render_actual_vs_predicted():
 # Chart 3 — Quantile interval on 80 test samples (precomputed)
 # ══════════════════════════════════════════════════════════════════════════════
 def render_quantile_chart():
-    act      = PERF_CURVES['act']
-    prd      = PERF_CURVES['prd']
-    low      = PERF_CURVES['low']
-    hig      = PERF_CURVES['hig']
+    act      = np.asarray(PERF_CURVES['act'], dtype=float)
+    prd      = np.asarray(PERF_CURVES['prd'], dtype=float)
+    low      = np.asarray(PERF_CURVES['low'], dtype=float)
+    hig      = np.asarray(PERF_CURVES['hig'], dtype=float)
     cov      = PERF['coverage']
     x_range  = np.arange(len(act))
 
