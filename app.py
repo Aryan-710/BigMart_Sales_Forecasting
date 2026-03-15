@@ -2,6 +2,11 @@ import numpy as np
 import datetime as dt
 import joblib
 import streamlit as st
+import shap
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -83,6 +88,20 @@ hr { border-color: #1f1f1f !important; margin: 1.5rem 0 !important; }
     border-left: 3px solid #ff3333; border-radius: 8px;
     padding: 1rem 1.5rem; margin-top: 1rem; color: #ff6666; font-size: 0.85rem;
 }
+.shap-box {
+    background: #111111; border: 1px solid #222222;
+    border-left: 3px solid #7c5cbf;
+    border-radius: 8px; padding: 1.2rem 1.6rem; margin-top: 1rem;
+}
+.shap-title {
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: #7c5cbf; margin-bottom: 0.8rem;
+}
+.shap-insight {
+    font-size: 0.83rem; color: #888; line-height: 1.6; margin-top: 0.8rem;
+}
+.shap-insight span { color: #ff6b35; font-weight: 600; }
 #MainMenu, footer, header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
@@ -99,13 +118,28 @@ OUTLET_TYPE_MAP = {
     'Supermarket Type2': 2, 'Supermarket Type3': 3
 }
 
+# Human-readable labels for SHAP chart (same order as model input)
+FEATURE_DISPLAY = {
+    'Item_MRP':          'Item MRP',
+    'Outlet_Identifier': 'Outlet ID',
+    'Outlet_Size':       'Outlet Size',
+    'Outlet_Type':       'Outlet Type',
+    'Outlet_age':        'Outlet Age',
+}
+FEATURE_NAMES   = list(FEATURE_DISPLAY.keys())
+FEATURE_LABELS  = list(FEATURE_DISPLAY.values())
+
 MAE          = 714.42
 CURRENT_YEAR = dt.datetime.today().year
 
-# ── Load model ────────────────────────────────────────────────────────────────
+# ── Load model + explainer ────────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
     return joblib.load('bigmart_model')
+
+@st.cache_resource
+def load_explainer():
+    return joblib.load('bigmart_explainer')
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.markdown("# 🛒 Big Mart\nSales Predictor")
@@ -141,10 +175,13 @@ if st.button("Predict Sales"):
         p4 = OUTLET_TYPE_MAP[outlet_type]
         p5 = CURRENT_YEAR - outlet_year
 
-        pred  = model.predict(np.array([[p1, p2, p3, p4, p5]]))[0]
+        input_arr = np.array([[p1, p2, p3, p4, p5]])
+
+        pred  = model.predict(input_arr)[0]
         lower = max(0, pred - MAE)
         upper = pred + MAE
 
+        # ── Prediction result (unchanged from original) ───────────────────
         st.markdown(f"""
         <div class="result-box">
             <div class="result-label">Predicted Sales</div>
@@ -167,6 +204,110 @@ if st.button("Predict Sales"):
         </div>
         """, unsafe_allow_html=True)
 
+        # ── SHAP Explanation ──────────────────────────────────────────────
+        try:
+            explainer  = load_explainer()
+            shap_vals  = explainer.shap_values(input_arr)   # shape (1, 5)
+            sv         = shap_vals[0]                        # 1-D array of 5 values
+
+            # Build sorted DataFrame for the bar chart
+            order      = np.argsort(np.abs(sv))              # ascending abs
+            sorted_labels = [FEATURE_LABELS[i] for i in order]
+            sorted_sv     = sv[order]
+
+            # Raw input values mapped back to human-readable strings for annotation
+            raw_display = {
+                'Item MRP':    f"₹{p1:.2f}",
+                'Outlet ID':   outlet_id,
+                'Outlet Size': outlet_size,
+                'Outlet Type': outlet_type,
+                'Outlet Age':  f"{p5} yrs",
+            }
+            sorted_raw = [raw_display[FEATURE_LABELS[i]] for i in order]
+
+            # ── Chart ─────────────────────────────────────────────────────
+            fig, ax = plt.subplots(figsize=(7, 3.2))
+            fig.patch.set_facecolor('#111111')
+            ax.set_facecolor('#111111')
+
+            colors = ['#ff6b35' if v > 0 else '#4a7fcb' for v in sorted_sv]
+            bars   = ax.barh(sorted_labels, sorted_sv, color=colors,
+                             height=0.52, zorder=3)
+
+            # Annotate each bar with raw value + SHAP delta
+            for bar, sv_val, raw_val in zip(bars, sorted_sv, sorted_raw):
+                x_end = bar.get_width()
+                ha    = 'left' if x_end >= 0 else 'right'
+                x_txt = x_end + (18 if x_end >= 0 else -18)
+                ax.text(x_txt,
+                        bar.get_y() + bar.get_height() / 2,
+                        f"{raw_val}  →  {sv_val:+.0f}",
+                        va='center', ha=ha,
+                        fontsize=8, color='#aaaaaa',
+                        fontfamily='monospace')
+
+            ax.axvline(0, color='#333333', linewidth=1.0, zorder=2)
+            ax.set_xlabel('SHAP value  (₹ impact on this prediction)',
+                          fontsize=8.5, color='#666666', labelpad=8)
+
+            ax.tick_params(axis='y', colors='#cccccc', labelsize=9)
+            ax.tick_params(axis='x', colors='#555555', labelsize=8)
+            ax.spines[['top', 'right', 'bottom']].set_visible(False)
+            ax.spines['left'].set_color('#2a2a2a')
+            ax.grid(axis='x', color='#1e1e1e', linestyle='--',
+                    linewidth=0.6, zorder=0)
+
+            # Legend
+            pos_patch = mpatches.Patch(color='#ff6b35', label='Increases prediction')
+            neg_patch = mpatches.Patch(color='#4a7fcb', label='Decreases prediction')
+            ax.legend(handles=[pos_patch, neg_patch], loc='lower right',
+                      fontsize=7.5, framealpha=0,
+                      labelcolor='#888888')
+
+            plt.tight_layout(pad=1.2)
+
+            # ── Render inside styled box ──────────────────────────────────
+            st.markdown('<div class="shap-box"><div class="shap-title">🔍 Why this prediction?</div></div>',
+                        unsafe_allow_html=True)
+            st.pyplot(fig, transparent=False)
+            plt.close(fig)
+
+            # ── Plain-English insight ─────────────────────────────────────
+            top_idx       = int(np.argmax(np.abs(sv)))
+            top_label     = FEATURE_LABELS[top_idx]
+            top_val       = list(raw_display.values())[top_idx]
+            top_sv        = sv[top_idx]
+            direction_str = "pushed the prediction <span>up</span>" if top_sv > 0 \
+                            else "pulled the prediction <span>down</span>"
+
+            st.markdown(f"""
+            <div class="shap-insight">
+                The biggest driver was <span>{top_label}</span> ({top_val}), which
+                {direction_str} by <span>₹{abs(top_sv):,.0f}</span>.
+                Orange bars increase the forecast; blue bars reduce it.
+            </div>
+            """, unsafe_allow_html=True)
+
+        except FileNotFoundError:
+            st.markdown("""
+            <div class="shap-box">
+                <div class="shap-title">🔍 Why this prediction?</div>
+                <div class="shap-insight">
+                    SHAP explainer file <code>bigmart_explainer</code> not found.
+                    Run the <em>Save SHAP Explainer</em> cell in the notebook first,
+                    then redeploy.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        except Exception as shap_err:
+            st.markdown(f"""
+            <div class="shap-box">
+                <div class="shap-title">🔍 Why this prediction?</div>
+                <div class="shap-insight">SHAP explanation unavailable: {shap_err}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
     except FileNotFoundError:
         st.markdown("""
         <div class="error-box">
@@ -176,4 +317,5 @@ if st.button("Predict Sales"):
         """, unsafe_allow_html=True)
 
     except Exception as e:
-        st.markdown(f'<div class="error-box">Prediction failed: {e}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="error-box">Prediction failed: {e}</div>',
+                    unsafe_allow_html=True)
