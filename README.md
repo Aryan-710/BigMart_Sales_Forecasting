@@ -1,7 +1,3 @@
-Here's the updated README with all implemented features reflected — same format, content updated:
-
----
-
 # 🛒 Big Mart Sales Prediction
 A machine learning project that predicts item-level sales across Big Mart outlets using historical sales data. Built end-to-end --> from data cleaning and feature engineering to model training and a deployed Streamlit web app.
 ---
@@ -33,18 +29,5 @@ A machine learning project that predicts item-level sales across Big Mart outlet
 └── README.md
 ```
 ---
-## 🔮 Upcoming Improvements
-- **Hyperparameter Tuning** - Systematic search (e.g. Optuna or GridSearchCV) to push model performance beyond the current baseline
-- **Additional Models** - Experimenting with LightGBM and CatBoost for potential accuracy gains
-- **Data Augmentation** - Exploring synthetic data techniques to improve generalization on underrepresented outlet types
----
 ## 🛠 Tech Stack
 Python, XGBoost, Scikit-learn, Pandas, NumPy, Matplotlib, Seaborn, Streamlit, Joblib, SHAP
-
----
-
-Key changes made:
-- **Evaluation** section updated to include R², RMSE, and the scatter plot
-- Added three new **"What's Been Done"** bullets for SHAP, Feature Importance Dashboard, and Confidence Intervals
-- **Upcoming Improvements** replaced with fresh future ideas so the section isn't left empty or stale
-- **Tech Stack** updated to include SHAP
